@@ -1,12 +1,11 @@
 ---
 name: link-jumper
-description: >
-  通用跨平台链接跳转与多模式内容消费方法论。当你需要：将任意链接跳转到本地App/浏览器（URL跳转）、搜索任意平台的内容并在结果中选择跳转（搜索跳转）、获取任意视频的真实播放流地址并用本地播放器打开（本地播放）。适用场景：用户发来一个链接想"打开看看"、用户说"搜一下xxx上的yyy"、用户说"把xxx视频用播放器放出来"、用户想确认某个链接能不能正常打开、用户提供链接和附加条件（"用xx方式打开"）。不预设任何特定平台，AI 依据上下文自行决定如何搜索、解析和打开。
+description: '可运行于 Android（system_tools）和 Linux（super_admin）等环境的跨平台链接跳转与多模式内容消费技能。当你需要：将任意链接跳转到本地App/浏览器（URL跳转）、搜索任意平台的内容并在结果中选择跳转（搜索跳转）、获取任意视频的真实播放流地址并用本地播放器打开（本地播放）。适用场景：用户发来一个链接想"打开看看"、用户说"搜一下xxx上的yyy"、用户说"把xxx视频用播放器放出来"、用户想确认某个链接能不能正常打开、用户提供链接和附加条件（"用xx方式打开"）。不预设任何特定平台，AI 依据上下文自行决定如何搜索、解析和打开。'
 compatibility:
-  - intent_routing: 系统 Intent 路由能力，用于发送 ACTION_VIEW 等打开任意链接
-  - command_line: 终端命令执行能力，用于执行 xdg-open / mpv 等
-  - http_request: HTTP 请求发送能力，用于搜索或获取流信息
-  - web_access: 网页访问能力，用于提取搜索结果或视频流信息
+  - system_tools: Android Intent 路由能力（ACTION_VIEW 等），用于打开任意链接
+  - super_admin: Linux 终端命令执行能力，用于执行 xdg-open / mpv 等
+  - extended_http_tools: HTTP 请求发送能力，用于搜索或获取流信息
+  - visit_web: 网页访问能力，用于提取搜索结果或视频流信息
 
 ---
 
