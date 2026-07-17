@@ -1,6 +1,19 @@
 ---
 name: link-jumper
-description: '可运行于 Android（system_tools）和 Linux（super_admin）等环境的跨平台链接跳转与多模式内容消费技能。当你需要：将任意链接跳转到本地App/浏览器（URL跳转）、搜索任意平台的内容并在结果中选择跳转（搜索跳转）、获取任意视频的真实播放流地址并用本地播放器打开（本地播放）。适用场景：用户发来一个链接想"打开看看"、用户说"搜一下xxx上的yyy"、用户说"把xxx视频用播放器放出来"、用户想确认某个链接能不能正常打开、用户提供链接和附加条件（"用xx方式打开"）。不预设任何特定平台，AI 依据上下文自行决定如何搜索、解析和打开。'
+description: >-
+  A cross-platform link jumping & content consumption skill for AI. Works on Android (system_tools) and Linux (super_admin).
+  When you need: opening links to local Apps/browser (URL jumping), searching any platform and picking results (search jumping),
+  or getting real video stream URLs and playing locally with a player (local playback).
+  Use cases: user sends a link to "open it", user says "search xxx on yyy", user says "play this video with a player",
+  user wants to check if a link works, user provides a link with conditions ("open with xx").
+  No fixed platform list — AI decides how to search, parse, and open based on context.
+
+  可运行于 Android（system_tools）和 Linux（super_admin）等环境的跨平台链接跳转与多模式内容消费技能。
+  当你需要：将任意链接跳转到本地App/浏览器（URL跳转）、搜索任意平台的内容并在结果中选择跳转（搜索跳转）、
+  获取任意视频的真实播放流地址并用本地播放器打开（本地播放）。
+  适用场景：用户发来一个链接想"打开看看"、用户说"搜一下xxx上的yyy"、用户说"把xxx视频用播放器放出来"、
+  用户想确认某个链接能不能正常打开、用户提供链接和附加条件（"用xx方式打开"）。
+  不预设任何特定平台，AI 依据上下文自行决定如何搜索、解析和打开。
 compatibility:
   - system_tools: Android Intent 路由能力（ACTION_VIEW 等），用于打开任意链接
   - super_admin: Linux 终端命令执行能力，用于执行 xdg-open / mpv 等
@@ -11,83 +24,102 @@ compatibility:
 
 # link-jumper — 通用智能链接跳转 & 内容消费
 
-## 核心思想
+## 技能概述
 
-不预设任何平台。不锁死任何配置。AI 依据用户的自然语言描述 + 链接本身的内容，自主判断处理方式。
+本技能定义了一套**跨平台的链接跳转、搜索跳转和视频播放行为模式**，让 AI 能够处理从链接跳转到搜索引擎再到本地视频播放的完整链路。核心设计是**不绑定任何特定平台或配置**，AI 根据用户意图和当前环境自主决策。
 
-三种行为模式，按输入特征自动判断：
-
-| 模式 | 用户输入特征 | 核心行为 |
-|---|---|---|
-| 链接跳转 | 输入以 http/https 开头 | 直接通过系统 Intent 或命令行打开 |
-| 搜索跳转 | "搜/找/查看 某平台 某内容" | AI自主探索该平台搜索方式 → 获取结果 → 用户选择 → 跳转 |
-| 本地播放 | "播/放/看 某视频" 或 "用播放器打开" | AI自行提取真实流地址 → 用本地播放器播放（如 mpv）或降级为链接跳转 |
+| 模式 | 用户输入 | AI 行为 |
+|------|---------|--------|
+| URL 跳转 | http/https 链接 | 调用系统 Intent（Android）或 xdg-open（Linux）打开匹配的 App/浏览器 |
+| 搜索跳转 | "搜一下xxx上的yyy" / "在xx上打开yy" | AI 搜索目标平台 → 读取结果 → 选取最佳匹配 → 跳转 |
+| 本地播放 | "播放/观看xxx视频" / "打开视频链接" | AI 提取真实视频流 → 用 mpv（Linux）或外部播放器（Android）播放 |
 
 ---
 
-## 模式一：链接跳转
+### URL 跳转 / URL Jumping
 
-任意 URL，不分平台。
+将指定 URL 跳转到本地应用或浏览器。**适用于：** 、、、 等。
 
-- **系统 Intent 路由**：发送 `ACTION_VIEW` Intent，`uri=<链接>` → 系统自动路由到对应 App
-- **终端命令**：执行 `xdg-open <链接>` 或等价命令
-- 如果用户指定"用xxx打开"（如"用Chrome"、"用B站App"），在 Intent 中限制目标包名或通过命令行指定应用
+- **Android**: 使用 （ACTION_VIEW）配合  参数，系统自动匹配最佳 App
+- **Linux**: 使用 xdg-open - opens a file or URL in the user's preferred application
 
-## 模式二：搜索跳转
+Synopsis
 
-AI 根据用户提到的平台名称，**自行推理**如何在该平台搜索：
+xdg-open { file | URL }
 
-1. **推理搜索方式**：
-   - 是否有公开 API？（GitHub、B站、微博等常见平台有）
-   - 是否只能用网页搜索？（小红书、抖音、Twitter等 → 直接访问网页）
-   - 搜索URL通常是什么格式？（`平台域名/search?q=关键词`）
+xdg-open { --help | --manual | --version }
 
-2. **搜索执行**：
-   - 有 API 的 → 发送 HTTP 请求，带合适的 UA/Referer
-   - 无 API 的 → 访问搜索结果页，提取页面文本
+Use 'man xdg-open' or 'xdg-open --manual' for additional info. 命令或 mpv 0.37.0 Copyright © 2000-2023 mpv/MPlayer/mplayer2 projects
+libplacebo version: v6.338.2
+FFmpeg version: 6.1.1-3ubuntu5
+FFmpeg library versions:
+   libavutil       58.29.100
+   libavcodec      60.31.102
+   libavformat     60.16.100
+   libswscale      7.5.100
+   libavfilter     9.12.100
+   libswresample   4.12.100
 
-3. **解析结果**：从 JSON 或页面文本中提取标题、链接、摘要
+Usage:   mpv [options] [url|path/]filename
 
-4. **展示给用户**：编号列表，让用户选择
+Basic options:
+ --start=<time>    seek to given (percent, seconds, or hh:mm:ss) position
+ --no-audio        do not play sound
+ --no-video        do not play video
+ --fs              fullscreen playback
+ --sub-file=<file> specify subtitle file to use
+ --playlist=<file> specify playlist file
 
-5. **跳转**：用户选择后 → 模式一
+ --list-options    list all mpv options
+ --h=<string>      print options which contain the given string in their name 直接打开媒体链接
+- **特殊场景**: "用 Chrome 打开"、"用百度App打开" → 通过包名/协议构造 Intent
 
-**遇到不认识的平台也不要停**：尝试直接访问 `平台域名/search?q=关键词` 看页面结构，或先用通用搜索引擎搜 `site:平台名 关键词` 找到内容再跳转。
+### 搜索跳转 / Search Jumping
 
-## 模式三：本地视频播放
+当 AI 没有目标平台 API 时，通过通用搜索方式查找并跳转：
 
-AI 识别视频来源后，自行判断如何获取真实流地址：
+1. **有公开 API？**（GitHub、B站、Twitter 等 → 使用 visit_web）
+2. **无 API？** → 使用  构造搜索 URL
+3. **解析结果**: 从 JSON/HTML 中提取目标链接
+4. **确认用户**: 展示结果等待确认
+5. **执行跳转**: 使用 URL 跳转模式打开
 
-**获取流地址的通用策略：**
-- 查找视频平台的播放信息 API（如 `api.bilibili.com/x/player/playurl`）
-- 需要防盗链头时，携带 Referer + User-Agent
-- 备选：访问页面查看是否内嵌了 .mp4/.m3u8 链接
-- 终端环境下可用 ffmpeg/yt-dlp 辅助获取
+> **对不支持的搜索平台:** 使用  进行搜索
 
-**播放执行：**
-- **支持命令行播放的环境**：`mpv --http-header-fields="Referer: xxx" <stream_url>`
-- **支持 Intent 路由的环境**：可通过 Intent 打开流 URL；否则降级为模式一（链接跳转）
+### 本地播放 / Local Playback — Stream Extraction
 
-**降级原则**：无法获取或 DRM 加密 → 降级为模式一（用App打开）。不卡住流程。
+AI 识别视频链接后:
+
+**检测来源:**
+- 检查平台是否有流媒体 API（如 ）
+- 设置正确的 Referer + User-Agent
+- 解析响应：是否为直接可用的 .mp4/.m3u8 链接
+- Linux：使用 ffmpeg/yt-dlp 进一步提取
+
+**本地播放:**
+- **终端命令**: 
+- **Intent 跳转**: 直接使用 Intent 打开视频 URL；如果不支持，降级到 URL 跳转模式
+
+**DRM 保护**: 无法通过标准 API 提取 → 降级到 URL 跳转（通过 App 打开），不对结果负责
 
 ---
 
-## 环境探测
+## 工具链 / Tool Chain
 
-每次执行前快速判断可用能力：
+AI 执行这些操作所需依赖的工具包：
 
-- 有系统 Intent 路由能力 → 移动平台/桌面平台 Intent 模式
-- 有命令行执行能力 → 终端命令模式
-- 都有 → 根据上下文或询问用户选择
-- 都没有 → 仅提供链接，让用户手动操作
+-  → Android Intent 路由/URL 打开
+-  → Linux 终端命令执行
+-  → HTTP 数据请求
+-  → 网页访问与内容提取
 
 ---
 
-## 思维原则
+## 设计原则 / Design Principles
 
-1. **不设限**：遇到没见过的平台，探索而不是放弃。尝试直接访问 `平台名.com/search?q=关键词` 这类通用模式。
-2. **自主推理**：AI 已有的知识足够判断大多数平台的搜索方式。不需要预设文件。
-3. **降级链**：本地播放 → App跳转 → 浏览器打开 → 复制链接。逐级降级，不卡顿。
-4. **防盗链常识**：大多数视频流需要 Referer 头；DASH 格式音视频分离需要合并；DRM 内容无法本地播放。
+1. **不预设平台** — 遇到新平台？用  先搜索，再应用同一套跳转逻辑
+2. **AI 自主决策** — AI 已具备常见平台搜索模式的知识储备，充分利用
+3. **优雅降级** — URL 跳转 ← App 打开 ← Intent ← 本地播放，每降一级成功率递减
+4. **无硬编码端点** — 不预设 App 的 URL Scheme，视频流提取始终使用 Referer
 
-这个 skill 的价值不是提供一个固定的平台列表，而是教会 AI **一套处理链接和内容消费的思维方法**，面对任何新平台都能自行应对。
+本技能不是一套固定的平台列表，而是供 AI 运用现有知识处理任意平台链接和内容消费的**通用方法论**。
