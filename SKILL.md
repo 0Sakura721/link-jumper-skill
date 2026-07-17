@@ -1,93 +1,85 @@
 ---
 name: link-jumper
-description: '可运行于 Android（system_tools）和 Linux（super_admin）等环境的跨平台链接跳转与多模式内容消费技能。当你需要：将任意链接跳转到本地App/浏览器（URL跳转）、搜索任意平台的内容并在结果中选择跳转（搜索跳转）、获取任意视频的真实播放流地址并用本地播放器打开（本地播放）。适用场景：用户发来一个链接想"打开看看"、用户说"搜一下xxx上的yyy"、用户说"把xxx视频用播放器放出来"、用户想确认某个链接能不能正常打开、用户提供链接和附加条件（"用xx方式打开"）。不预设任何特定平台，AI 依据上下文自行决定如何搜索、解析和打开。'
+description: >-
+  A cross-platform link jumping and content consumption methodology for AI. 
+  When you need: opening links to local Apps/browser (URL jumping), searching any platform and picking results (search jumping), 
+  or getting real video stream URLs and playing locally with a player (local playback).
+  No fixed platform list - teaches AI a **mindset** for handling links and content consumption across any new platform.
+  
+  通用跨平台链接跳转与多模式内容消费方法论。当你需要：将任意链接跳转到本地App/浏览器（URL跳转）、搜索任意平台的内容并在结果中选择跳转（搜索跳转）、
+  获取任意视频的真实播放流地址并用本地播放器打开（本地播放）。不预设任何特定平台，AI 依据上下文自行决定如何搜索、解析和打开。
 compatibility:
-  - system_tools: Android Intent 路由能力（ACTION_VIEW 等），用于打开任意链接
-  - super_admin: Linux 终端命令执行能力，用于执行 xdg-open / mpv 等
-  - extended_http_tools: HTTP 请求发送能力，用于搜索或获取流信息
-  - visit_web: 网页访问能力，用于提取搜索结果或视频流信息
+  - intent_routing: System Intent routing capability, used for ACTION_VIEW Intent to jump to links
+  - command_line: Terminal/CLI capability, used for xdg-open / mpv on Linux
+  - http_request: HTTP request capability, for searching or fetching streaming info
+  - web_access: Web page access capability, for extracting search results or streaming info
 
 ---
 
-# link-jumper — 通用智能链接跳转 & 内容消费
+# link-jumper - Universal Link Jumping & Content Consumption
 
-## 核心思想
+## What It Solves
 
-不预设任何平台。不锁死任何配置。AI 依据用户的自然语言描述 + 链接本身的内容，自主判断处理方式。
+A cross-platform approach that transcends specific platforms and devices. AI understands a **methodology**, not a platform checklist - with the flexibility to handle links and content consumption beyond hardcoded platforms.
 
-三种行为模式，按输入特征自动判断：
+**Three operational modes:**
 
-| 模式 | 用户输入特征 | 核心行为 |
-|---|---|---|
-| 链接跳转 | 输入以 http/https 开头 | 直接通过系统 Intent 或命令行打开 |
-| 搜索跳转 | "搜/找/查看 某平台 某内容" | AI自主探索该平台搜索方式 → 获取结果 → 用户选择 → 跳转 |
-| 本地播放 | "播/放/看 某视频" 或 "用播放器打开" | AI自行提取真实流地址 → 用本地播放器播放（如 mpv）或降级为链接跳转 |
-
----
-
-## 模式一：链接跳转
-
-任意 URL，不分平台。
-
-- **系统 Intent 路由**：发送 `ACTION_VIEW` Intent，`uri=<链接>` → 系统自动路由到对应 App
-- **终端命令**：执行 `xdg-open <链接>` 或等价命令
-- 如果用户指定"用xxx打开"（如"用Chrome"、"用B站App"），在 Intent 中限制目标包名或通过命令行指定应用
-
-## 模式二：搜索跳转
-
-AI 根据用户提到的平台名称，**自行推理**如何在该平台搜索：
-
-1. **推理搜索方式**：
-   - 是否有公开 API？（GitHub、B站、微博等常见平台有）
-   - 是否只能用网页搜索？（小红书、抖音、Twitter等 → 直接访问网页）
-   - 搜索URL通常是什么格式？（`平台域名/search?q=关键词`）
-
-2. **搜索执行**：
-   - 有 API 的 → 发送 HTTP 请求，带合适的 UA/Referer
-   - 无 API 的 → 访问搜索结果页，提取页面文本
-
-3. **解析结果**：从 JSON 或页面文本中提取标题、链接、摘要
-
-4. **展示给用户**：编号列表，让用户选择
-
-5. **跳转**：用户选择后 → 模式一
-
-**遇到不认识的平台也不要停**：尝试直接访问 `平台域名/search?q=关键词` 看页面结构，或先用通用搜索引擎搜 `site:平台名 关键词` 找到内容再跳转。
-
-## 模式三：本地视频播放
-
-AI 识别视频来源后，自行判断如何获取真实流地址：
-
-**获取流地址的通用策略：**
-- 查找视频平台的播放信息 API（如 `api.bilibili.com/x/player/playurl`）
-- 需要防盗链头时，携带 Referer + User-Agent
-- 备选：访问页面查看是否内嵌了 .mp4/.m3u8 链接
-- 终端环境下可用 ffmpeg/yt-dlp 辅助获取
-
-**播放执行：**
-- **支持命令行播放的环境**：`mpv --http-header-fields="Referer: xxx" <stream_url>`
-- **支持 Intent 路由的环境**：可通过 Intent 打开流 URL；否则降级为模式一（链接跳转）
-
-**降级原则**：无法获取或 DRM 加密 → 降级为模式一（用App打开）。不卡住流程。
+| Mode | Input to AI | Outcome |
+|------|------------|---------|
+| URL Jumping | http/https link -> AI parses protocol & decides | Invokes system Intent (Android) or xdg-open (Linux) to open in matching App/Browser |
+| Search Jumping | "search on Y for X" or "open X on Y" | AI searches target platform -> reads results -> picks best match -> jumps |
+| Local Playback | "play/watch X" or "open video/audio link" | AI extracts real video stream -> plays locally with mpv (Linux) or external player (Android) |
 
 ---
 
-## 环境探测
+### Mode A: URL Jumping
 
-每次执行前快速判断可用能力：
+Jump a URL to local app/browser.
+- **Android**: `ACTION_VIEW` Intent with `uri=<url>` -> routes to best matching App
+- **Linux**: `xdg-open <url>` or terminal-based opener
+- **Special cases**: "open X in Chrome", "open X with Baidu App" -> use Intent with package name / app scheme
 
-- 有系统 Intent 路由能力 → 移动平台/桌面平台 Intent 模式
-- 有命令行执行能力 → 终端命令模式
-- 都有 → 根据上下文或询问用户选择
-- 都没有 → 仅提供链接，让用户手动操作
+### Mode B: Search Jumping
+
+When AI doesn't have direct API access:
+1. **Is there a public/searchable API?** (GitHub, Bilibili, Twitter, etc. -> use visit_web)
+2. **No API?** -> use web search `site:platform-name search-keyword`
+3. **Search + parse**: extract from JSON/HTML, locate the target link
+4. **Present to user**: summarize and confirm
+5. **Jump**: execute the chosen jump method
+
+> **For unsupported search targets:** use `visit_web <site>.com/search?q=<keyword>`
+
+### Mode C: Local Playback - Stream Extraction
+
+**Detect source:**
+- Check if platform has streaming API (e.g. `api.bilibili.com/x/player/playurl`)
+- Set proper Referer + User-Agent
+- Parse response: is it a direct .mp4/.m3u8 link?
+- Linux: use ffmpeg/yt-dlp for further extraction
+
+**Play locally:**
+- **Terminal command**: `mpv --http-header-fields="Referer: xxx" <stream_url>`
+- **Intent jump**: directly invoke Intent with the video URL; fall back to Mode A
+
+**DRM**: cannot extract DRM-protected content via Standard API -> fall back to Mode A.
 
 ---
 
-## 思维原则
+## Tool Chain
 
-1. **不设限**：遇到没见过的平台，探索而不是放弃。尝试直接访问 `平台名.com/search?q=关键词` 这类通用模式。
-2. **自主推理**：AI 已有的知识足够判断大多数平台的搜索方式。不需要预设文件。
-3. **降级链**：本地播放 → App跳转 → 浏览器打开 → 复制链接。逐级降级，不卡顿。
-4. **防盗链常识**：大多数视频流需要 Referer 头；DASH 格式音视频分离需要合并；DRM 内容无法本地播放。
+- `intent_routing` -> Android Intent execution/URL routing
+- `command_line` -> Linux shell execution
+- `http_request` -> HTTP data fetching
+- `web_access` -> Web page access for search/local parsing
 
-这个 skill 的价值不是提供一个固定的平台列表，而是教会 AI **一套处理链接和内容消费的思维方法**，面对任何新平台都能自行应对。
+---
+
+## Design Principles
+
+1. **Not platform-locked** -> new platform? Use `visit_web` to search, then apply same jumping logic.
+2. **AI-driven decision making** -> AI already knows common platforms' search patterns. Use it.
+3. **Graceful fallback** -> URL Jumping <- App <- Intent <- Local Playback. Each step = lower success rate.
+4. **No hardcoded endpoints** -> no app-specific URL schemas; always use Referer for video extraction.
+
+This skill is a **universal methodology** that AI applies with existing knowledge to handle links on any platform.
