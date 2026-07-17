@@ -7,6 +7,17 @@
 
 ---
 
+## Operit AI 专用版
+
+本分支为 **Operit AI 专用版**，对 SKILL.md 进行了平台绑定配置，专用于 Operit AI 平台。
+
+### 兼容性
+
+- **system_tools**: Android Intent 执行能力，用于执行 ACTION_VIEW Intent 跳转 URL
+- **super_admin**: Linux 终端命令执行能力，用于执行 xdg-open / mpv 等
+- **extended_http_tools**: HTTP 请求能力，用于搜索 API 调用
+- **visit_web**: 网页访问能力，用于搜索页面抓取
+
 ## 目录
 
 - [设计理念](#设计理念)
